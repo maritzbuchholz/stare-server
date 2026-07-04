@@ -18,29 +18,6 @@ CREATE TABLE `products` (
   UNIQUE KEY `products_sku_unique` (`sku`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `carts` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `session_id` varchar(255) NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `carts_session_id_unique` (`session_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-CREATE TABLE `cart_items` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `cart_id` int unsigned NOT NULL,
-  `product_id` int unsigned NOT NULL,
-  `quantity` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `cart_items_cart_product_unique` (`cart_id`, `product_id`),
-  KEY `cart_items_product_id_foreign` (`product_id`),
-  CONSTRAINT `cart_items_cart_id_foreign` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `cart_items_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
 CREATE TABLE `orders` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `email` varchar(255) NOT NULL,
@@ -70,3 +47,8 @@ CREATE TABLE `order_items` (
   CONSTRAINT `order_items_order_id_foreign` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
   CONSTRAINT `order_items_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO `products` VALUES
+    (1, "Shirt", 2500, "A comfortable cotton t-shirt", "https://placecats.com/300/300", "SKU00001", 30, NOW(), NOW()),
+    (2, "Beanie", 1500, "A comfortable beanie", "https://placecats.com/300/300", "SKU00002", 50, NOW(), NOW()),
+    (3, "Record", 1200, "A warm hat", "https://placecats.com/300/300", "SKU00003", 75, NOW(), NOW());
