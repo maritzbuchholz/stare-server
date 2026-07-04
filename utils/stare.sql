@@ -1,12 +1,8 @@
-SET FOREIGN_KEY_CHECKS = 0;
+DROP DATABASE IF EXISTS `stare`;
 
-DROP TABLE IF EXISTS `order_items`;
-DROP TABLE IF EXISTS `orders`;
-DROP TABLE IF EXISTS `cart_items`;
-DROP TABLE IF EXISTS `carts`;
-DROP TABLE IF EXISTS `products`;
+CREATE DATABASE `stare`;
 
-SET FOREIGN_KEY_CHECKS = 1;
+USE `stare`;
 
 CREATE TABLE `products` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
