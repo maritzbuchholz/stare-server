@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --watch server.js",
-    "start": "node server.js",
-    "import": "node ./utils/import-database.js",
+    "dev": "tsx --watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
     "database": "mysql -u root -p < ./src/utils/stare.sql"
   },
   "keywords": [],
@@ -19,6 +20,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mysql2": "^3.22.5",
+    "ts-node": "^10.9.2",
     "uuid": "^14.0.1"
   },
   "devDependencies": {
