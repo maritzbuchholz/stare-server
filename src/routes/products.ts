@@ -6,16 +6,14 @@ const router = express.Router();
 
 router.route("/").get(async (req, res) => {
     const sql = `
-        SELECT 
-            inventories.id, 
-            warehouses.warehouse_name, 
-            inventories.item_name, 
-            inventories.description, 
-            inventories.category, 
-            inventories.status, 
-            inventories.quantity
-        FROM inventories 
-        JOIN warehouses ON inventories.warehouse_id = warehouses.id
+    SELECT 
+    p.id, p.name, p.price_cents, p.description, p.image_url,
+    JSON_ARRAYAGG(
+        JSON_OBJECT('id', v.id, 'size', v.size, 'sku', v.sku, 'inventory_count', v.inventory_count)
+    ) AS variants
+    FROM products p
+    LEFT JOIN product_variants v ON v.product_id = p.id
+    GROUP BY p.id
     `;
     try {
         const [results] = await connection.query(sql);
