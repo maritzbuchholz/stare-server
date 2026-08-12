@@ -1,6 +1,7 @@
 import express from "express";
-import connection from "../mysql.js";
 import { v4 as uuidv4 } from 'uuid';
+
+import connection from "../mysql.js";
 
 const router = express.Router();
 
