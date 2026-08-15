@@ -21,6 +21,7 @@ CREATE TABLE `product_variants` (
   `size` varchar(20) NOT NULL,
   `sku` varchar(255) NOT NULL,
   `inventory_count` int NOT NULL DEFAULT 0,
+  `price_id` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -66,10 +67,10 @@ INSERT INTO `products` (`id`, `name`, `price_cents`, `description`, `image_url`)
     (2, "Beanie", 1500, "A warm hat", "https://placecats.com/300/300"),
     (3, "CD", 1200, "A CD album", "https://placecats.com/300/300");
 
-INSERT INTO `product_variants` (`id`, `product_id`, `size`, `sku`, `inventory_count`)VALUES
-    (1, 1, "S", "SKUS0001", 30),
-    (2, 1, "M", "SKUM0001", 30),
-    (3, 1, "L", "SKUL0001", 30),
-    (4, 1, "XL", "SKUX0001", 30),
-    (5, 2, "None", "SKU00002", 50),
-    (6, 3, "None", "SKU00003", 75);
+INSERT INTO `product_variants` (`id`, `product_id`, `size`, `sku`, `inventory_count`, `price_id`)VALUES
+    (1, 1, "S", "SKUS0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
+    (2, 1, "M", "SKUM0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
+    (3, 1, "L", "SKUL0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
+    (4, 1, "XL", "SKUX0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
+    (5, 2, "None", "SKU00002", 50, "price_1U4oO4CnsumT0OCqkHeea4ri"),
+    (6, 3, "None", "SKU00003", 75, "price_1U4oMaCnsumT0OCqxsUdePLf");

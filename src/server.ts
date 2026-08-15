@@ -2,8 +2,8 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 
-import products from "./routes/products.js";
 import checkout from "./routes/create-checkout-session.js";
+import products from "./routes/products.js";
 // import orders from "./routes/orders";
 // import order_items from "./routes/order_items";
 
