@@ -6,7 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_KEY!);
 
 const successPage = "https://github.com/maritzbuchholz?tab=repositories";
 
-router.route("/create-checkout-session").post(async (req, res) => {
+router.route("/").post(async (req, res) => {
     const session = await stripe.checkout.sessions.create({
         line_items: [
             {
@@ -23,7 +23,7 @@ router.route("/create-checkout-session").post(async (req, res) => {
         return;
     }
     
-    res.redirect(303, session.url);
+    res.json({url: session.url});
     
 });
 

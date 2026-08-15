@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 
 import products from "./routes/products.js";
+import checkout from "./routes/create-checkout-session.js";
 // import orders from "./routes/orders";
 // import order_items from "./routes/order_items";
 
@@ -14,6 +15,7 @@ app.use(cors());
 app.use(express.json()); // allows parsing JSON data from req objects
 
 app.use("/products", products);
+app.use("/create-checkout-session", checkout);
 // app.use("/orders", orders);
 // app.use("/order_items", order_items);
 
