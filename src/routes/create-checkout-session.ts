@@ -7,6 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_KEY!);
 const successPage = "https://github.com/maritzbuchholz?tab=repositories";
 
 router.route("/").post(async (req, res) => {
+    const { items } = req.body as {
+        items: { sku: string; quantity: number }[];
+    };
+    
     const session = await stripe.checkout.sessions.create({
         line_items: [
             {
