@@ -40,7 +40,7 @@ router.route("/").post(async (req, res) => {
         WHERE sku IN (?)
         `;
 
-        //Wrapping [skus] "the first ? placeholder gets replaced with this whole array"
+        //Wrapping [skus] - the first ? placeholder gets replaced with this whole array
         //Then, deconstructing [row, fields] tuple into single array of objects; row is target data and fields is metadata
         const [rows] = await connection.query(sql, [skus]);
 

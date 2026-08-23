@@ -65,7 +65,7 @@ CREATE TABLE `order_items` (
 INSERT INTO `products` (`id`, `name`, `price_cents`, `description`, `image_url`) VALUES
     (1, "Shirt", 2500, "A comfortable cotton t-shirt", "https://placecats.com/300/300"),
     (2, "Beanie", 1500, "A warm hat", "https://placecats.com/300/300"),
-    (3, "CD", 1200, "A CD album", "https://placecats.com/300/300");
+    (3, "Stare (Self Titled)", 1200, "A CD album", "https://placecats.com/300/300");
 
 INSERT INTO `product_variants` (`id`, `product_id`, `size`, `sku`, `inventory_count`, `price_id`)VALUES
     (1, 1, "S", "SKUS0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
