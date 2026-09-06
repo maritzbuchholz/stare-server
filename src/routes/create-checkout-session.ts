@@ -5,12 +5,13 @@ import connection from "../mysql.js";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_KEY!);
+const confirm = process.env.CONFIRM
 
-const successPage = "https://github.com/maritzbuchholz?tab=repositories";
+const successPage = `http://localhost:${confirm}`;
 
 router.route("/").post(async (req, res) => {
     const { items } = req.body as {
-        items: { sku: string; quantity: number }[];
+        items: { quantity: number; sku: string; }[];
     };
 
     //if items array is empty, return error message to client
@@ -45,7 +46,7 @@ router.route("/").post(async (req, res) => {
         const [rows] = await connection.query(sql, [skus]);
 
         //Confirms shape of mysql pull as compile-time check
-        const variants = rows as { sku: string; price_id: string; inventory_count: number }[];
+        const variants = rows as { inventory_count: number; price_id: string; sku: string; }[];
 
         //Creates an object with skus and keys
         const variantBySku = new Map(variants.map((v) => [v.sku, v]));
@@ -72,7 +73,7 @@ router.route("/").post(async (req, res) => {
             quantity: item.quantity,
         }));
 
-        //Pass boject into stripe sessions object
+        //Pass object into stripe sessions object
         const session = await stripe.checkout.sessions.create({
             line_items,
             mode: 'payment',

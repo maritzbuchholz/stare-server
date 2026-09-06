@@ -69,8 +69,8 @@ INSERT INTO `products` (`id`, `name`, `price_cents`, `description`, `image_url`)
 
 INSERT INTO `product_variants` (`id`, `product_id`, `size`, `sku`, `inventory_count`, `price_id`)VALUES
     (1, 1, "S", "SKUS0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
-    (2, 1, "M", "SKUM0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
-    (3, 1, "L", "SKUL0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
-    (4, 1, "XL", "SKUX0001", 30, "price_1U4oORCnsumT0OCqHLonfdtO"),
+    (2, 1, "M", "SKUM0001", 30, "price_1UChMKCnsumT0OCqUbu55Pji"),
+    (3, 1, "L", "SKUL0001", 30, "price_1UChMdCnsumT0OCq7I8QvpMf"),
+    (4, 1, "XL", "SKUX0001", 30, "price_1UChMsCnsumT0OCqZcPhgviB"),
     (5, 2, "None", "SKU00002", 50, "price_1U4oO4CnsumT0OCqkHeea4ri"),
     (6, 3, "None", "SKU00003", 75, "price_1U4oMaCnsumT0OCqxsUdePLf");
