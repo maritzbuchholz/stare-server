@@ -14,11 +14,15 @@ if (!port) throw new Error('Missing PORT');
 const app = express();
 
 app.use(cors());
+
+// Webhook route needs the raw body for Stripe signature verification —
+// must be mounted BEFORE express.json() so the JSON parser never touches it
+app.use("/webhook", express.raw({ type: "application/json" }), webhook);
+
 app.use(express.json()); // allows parsing JSON data from req objects
 
 app.use("/products", products);
 app.use("/create-checkout-session", checkout);
-app.use("/webhook", webhook);
 // app.use("/orders", orders);
 // app.use("/order_items", order_items);
 
