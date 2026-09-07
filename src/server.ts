@@ -9,6 +9,7 @@ import products from "./routes/products.js";
 
 
 const port = process.env.PORT;
+if (!port) throw new Error('Missing PORT');
 const app = express();
 
 app.use(cors());
@@ -19,4 +20,4 @@ app.use("/create-checkout-session", checkout);
 // app.use("/orders", orders);
 // app.use("/order_items", order_items);
 
-app.listen(port, () => { console.log(`Listening on ${port} ?? 3000`); });
+app.listen(port, () => { console.log(`Listening on ${port}`); });

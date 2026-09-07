@@ -4,10 +4,14 @@ import Stripe from "stripe";
 import connection from "../mysql.js";
 
 const router = express.Router();
-const stripe = new Stripe(process.env.STRIPE_KEY!);
-const confirm = process.env.CONFIRM
 
+const confirm = process.env.CONFIRM
+if (!confirm) throw new Error('Missing CONFIRM');
 const successPage = `http://localhost:${confirm}`;
+
+const stripeKey = process.env.STRIPE_KEY;
+if (!stripeKey) throw new Error('Missing STRIPE_KEY');
+const stripe = new Stripe(stripeKey);
 
 router.route("/").post(async (req, res) => {
     const { items } = req.body as {
@@ -15,7 +19,7 @@ router.route("/").post(async (req, res) => {
     };
 
     //if items array is empty, return error message to client
-    if (!items || items.length === 0) {
+    if (items.length === 0) {
         res.status(400).json({ error: "No items provided" });
         return;
     }
@@ -60,7 +64,12 @@ router.route("/").post(async (req, res) => {
 
         //Captures any items where purchase quantity > inventory count and puts resulting skus in a array
         const insufficientStockSkus = items
-            .filter((item) => item.quantity > variantBySku.get(item.sku)!.inventory_count)
+            .filter((item) => {
+                    const variant = variantBySku.get(item.sku);
+                    if (!variant) throw new Error(`No variant found for SKU: ${item.sku}`);
+                    return item.quantity > variant.inventory_count;
+                }
+            )
             .map((item) => item.sku);
         if (insufficientStockSkus.length > 0) {
             res.status(400).json({ error: `Insufficient inventory for sku(s): ${insufficientStockSkus.join(", ")}` });
@@ -68,10 +77,14 @@ router.route("/").post(async (req, res) => {
         }
 
         //Map items into an array of objects to pass to Stripe
-        const line_items = items.map((item) => ({
-            price: variantBySku.get(item.sku)!.price_id,
-            quantity: item.quantity,
-        }));
+        const line_items = items.map((item) => {
+            const variant = variantBySku.get(item.sku);
+            if (!variant) throw new Error(`No variant found for SKU: ${item.sku}`);
+            return {
+                price: variant.price_id,
+                quantity: item.quantity,
+            }
+        });
 
         //Pass object into stripe sessions object
         const session = await stripe.checkout.sessions.create({
