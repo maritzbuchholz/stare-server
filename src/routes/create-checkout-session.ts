@@ -53,12 +53,12 @@ router.route("/").post(async (req, res) => {
         //Confirms shape of mysql pull as compile-time check
         const variants = rows as {
             id: number;
+            inventory_count: number;
+            price_cents: number;
+            price_id: string;
+            product_name: string;
             size: string;
             sku: string;
-            price_id: string;
-            inventory_count: number;
-            product_name: string;
-            price_cents: number;
         }[];
 
         //Creates an object with skus and keys
@@ -97,13 +97,13 @@ router.route("/").post(async (req, res) => {
 
         //Pass object into stripe sessions object
         const session = await stripe.checkout.sessions.create({
+            expires_at: Math.floor(Date.now() / 1000) + 60 * 30,
+            line_items,
             mode: 'payment',
             payment_method_types: ['card'],
-            line_items,
             shipping_address_collection: {
                 allowed_countries: ['US', 'CA'], // whichever countries you ship to
             },
-            expires_at: Math.floor(Date.now() / 1000) + 60 * 30,
             success_url: `${successPage}?success=true`
         });
 
@@ -117,13 +117,13 @@ router.route("/").post(async (req, res) => {
             const variant = variantBySku.get(item.sku);
             if (!variant) throw new Error(`No variant found for SKU: ${item.sku}`);
             return {
-                product_variant_id: variant.id,
-                product_name: variant.product_name,
-                variant_size: variant.size,
-                product_sku: variant.sku,
-                unit_price_cents: variant.price_cents,
-                quantity: item.quantity,
                 line_total_cents: variant.price_cents * item.quantity,
+                product_name: variant.product_name,
+                product_sku: variant.sku,
+                product_variant_id: variant.id,
+                quantity: item.quantity,
+                unit_price_cents: variant.price_cents,
+                variant_size: variant.size,
             };
         });
         const totalCents = orderItemRows.reduce((sum, row) => sum + row.line_total_cents, 0);

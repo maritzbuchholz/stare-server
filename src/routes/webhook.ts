@@ -1,6 +1,7 @@
 import express from "express";
-import connection from "../mysql.js";
 import Stripe from "stripe";
+
+import connection from "../mysql.js";
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ if (!secret) throw new Error('Missing SECRET');
 
 
 router.route("/").post(async (req, res) => {
-    let event;
+    let event: Stripe.Event;
 
     // Get the signature sent by Stripe
     const signature = req.headers['stripe-signature'];
@@ -18,7 +19,7 @@ router.route("/").post(async (req, res) => {
     }
 
     try {
-        event = Stripe.webhooks.constructEvent(req.body, signature, secret);
+        event = Stripe.webhooks.constructEvent(req.body as Buffer, signature, secret);
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.log(`Webhook signature verification failed.`, message);
