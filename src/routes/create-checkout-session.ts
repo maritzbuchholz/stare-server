@@ -97,9 +97,12 @@ router.route("/").post(async (req, res) => {
 
         //Pass object into stripe sessions object
         const session = await stripe.checkout.sessions.create({
-            line_items,
-            payment_method_types: ['card'],
             mode: 'payment',
+            payment_method_types: ['card'],
+            line_items,
+            shipping_address_collection: {
+                allowed_countries: ['US', 'CA'], // whichever countries you ship to
+            },
             success_url: `${successPage}?success=true`
         });
 

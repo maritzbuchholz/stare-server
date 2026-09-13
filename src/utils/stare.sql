@@ -40,7 +40,7 @@ CREATE TABLE `orders` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   -- 'payment_pending' = order row created, webhook hasn't confirmed payment yet
   -- 'paid' = payment confirmed, awaiting fulfillment (renamed from 'pending' — see note below)
-  `status` enum('payment_pending','paid','fulfilled','refund_requested','refunded') NOT NULL DEFAULT 'payment_pending',
+  `status` enum('payment_pending','payment_cancelled','paid','fulfilled','refund_requested','refunded') NOT NULL DEFAULT 'payment_pending',
   `total_cents` int NOT NULL,
   `email` varchar(255) NULL,
   `shipping_address` json NULL,
