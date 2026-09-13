@@ -26,13 +26,10 @@ router.route("/").post(async (req, res) => {
     }
     
     switch (event.type) {
-        case 'payment_intent.succeeded':
-            const paymentIntent = event.data.object;
-            // Then define and call a method to handle the successful payment intent.
-            // handlePaymentIntentSucceeded(paymentIntent);
-            break;
-        case 'payment_method.attached':
-            const paymentMethod = event.data.object;
+        case 'checkout.session.completed':
+            const session = event.data.object;
+            const email = session.customer_details?.email;
+            console.log(session);
             // Then define and call a method to handle the successful attachment of a PaymentMethod.
             // handlePaymentMethodAttached(paymentMethod);
             break;
