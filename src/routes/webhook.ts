@@ -29,7 +29,6 @@ router.route("/").post(async (req, res) => {
         case 'checkout.session.completed':
             const session = event.data.object;
             const email = session.customer_details?.email;
-            console.log(session);
             // Then define and call a method to handle the successful attachment of a PaymentMethod.
             // handlePaymentMethodAttached(paymentMethod);
             break;
