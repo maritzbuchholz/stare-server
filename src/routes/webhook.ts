@@ -29,7 +29,9 @@ router.route("/").post(async (req, res) => {
         case 'checkout.session.completed': {
             const session = event.data.object;
             const email = session.customer_details?.email ?? null;
-            const shippingAddress = session.customer_details?.address ?? null;
+            const shippingAddress = JSON.stringify(
+                session.collected_information?.shipping_details?.address ?? null
+            );
 
             try {
                 await connection.query(
@@ -43,7 +45,21 @@ router.route("/").post(async (req, res) => {
             }
             break;
         }
-        case 'checkout.session.expired':
+        case 'checkout.session.expired': {
+            const session = event.data.object;
+
+            try {
+                await connection.query(
+                    `UPDATE orders SET status = 'payment_cancelled' WHERE stripe_session_id = ?`,
+                    [session.id]
+                );
+            } catch (err) {
+                console.log(`Failed to update order for session ${session.id}`, err);
+                res.sendStatus(500);
+                return;
+            }
+            break;
+        }
         default:
             console.log(`Unhandled event type ${event.type}`);
     }

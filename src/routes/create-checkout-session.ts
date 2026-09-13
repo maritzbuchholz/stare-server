@@ -103,6 +103,7 @@ router.route("/").post(async (req, res) => {
             shipping_address_collection: {
                 allowed_countries: ['US', 'CA'], // whichever countries you ship to
             },
+            expires_at: Math.floor(Date.now() / 1000) + 60 * 30,
             success_url: `${successPage}?success=true`
         });
 
