@@ -93,4 +93,62 @@ router.route("/:id").post(async (req, res) => {
     }
 });
 
+// Update any of the product-level fields; only fields present in the body are changed
+router.route("/:id").patch(async (req, res) => {
+    const productId = Number(req.params.id);
+    const { name, price_cents, description, image_url } = req.body ?? {};
+
+    if (!Number.isInteger(productId) || productId < 1) {
+        return res.status(400).send("Invalid product id");
+    }
+
+    const updates: string[] = [];
+    const values: (string | number)[] = [];
+
+    if (name !== undefined) {
+        if (!isNonEmptyString(name)) return res.status(400).send("name must be a non-empty string");
+        updates.push("name = ?");
+        values.push(name);
+    }
+    if (description !== undefined) {
+        if (!isNonEmptyString(description)) return res.status(400).send("description must be a non-empty string");
+        updates.push("description = ?");
+        values.push(description);
+    }
+    if (image_url !== undefined) {
+        if (!isNonEmptyString(image_url)) return res.status(400).send("image_url must be a non-empty string");
+        updates.push("image_url = ?");
+        values.push(image_url);
+    }
+    if (price_cents !== undefined) {
+        if (!Number.isInteger(price_cents) || price_cents <= 0) {
+            return res.status(400).send("price_cents must be a positive integer");
+        }
+        updates.push("price_cents = ?");
+        values.push(price_cents);
+    }
+
+    if (updates.length === 0) {
+        return res.status(400).send("Provide at least one of: name, price_cents, description, image_url");
+    }
+
+    try {
+        const [result] = await connection.query<ResultSetHeader>(
+            `UPDATE products SET ${updates.join(", ")} WHERE id = ?`,
+            [...values, productId]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).send("Product not found");
+        }
+        const [rows] = await connection.query(
+            `SELECT id, name, price_cents, description, image_url FROM products WHERE id = ?`,
+            [productId]
+        );
+        res.json((rows as unknown[])[0]);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Error occured on the server");
+    }
+});
+
 export default router;
