@@ -151,4 +151,32 @@ router.route("/:id").patch(async (req, res) => {
     }
 });
 
+// Delete a product; its variants are removed too via ON DELETE CASCADE
+router.route("/:id").delete(async (req, res) => {
+    const productId = Number(req.params.id);
+
+    if (!Number.isInteger(productId) || productId < 1) {
+        return res.status(400).send("Invalid product id");
+    }
+
+    try {
+        const [result] = await connection.query<ResultSetHeader>(
+            `DELETE FROM products WHERE id = ?`,
+            [productId]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).send("Product not found");
+        }
+        res.status(204).send();
+    } catch (error) {
+        // order_items references product_variants with no cascade, so variants that
+        // appear in past orders block the delete (the whole statement is rolled back)
+        if ((error as { code?: string }).code === "ER_ROW_IS_REFERENCED_2") {
+            return res.status(409).send("Product has variants in existing orders and can't be deleted");
+        }
+        console.log(error);
+        res.status(500).send("Error occured on the server");
+    }
+});
+
 export default router;
