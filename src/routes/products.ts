@@ -1,5 +1,6 @@
-import express from "express";
 import type { ResultSetHeader } from "mysql2";
+
+import express from "express";
 // import { v4 as uuidv4 } from 'uuid';
 
 import connection from "../mysql.js";
@@ -29,14 +30,16 @@ router.route("/").get(async (req, res) => {
 const isNonEmptyString = (value: unknown): value is string =>
     typeof value === "string" && value.trim().length > 0;
 
+const isInt = (value: unknown): value is number => Number.isInteger(value);
+
 // Add the product-level info; variants (size/sku/stock) are added via POST /products/:id
 router.route("/").post(async (req, res) => {
-    const { name, price_cents, description, image_url } = req.body ?? {};
+    const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
     if (!isNonEmptyString(name) || !isNonEmptyString(description) || !isNonEmptyString(image_url)) {
         return res.status(400).send("name, description and image_url are required non-empty strings");
     }
-    if (!Number.isInteger(price_cents) || price_cents <= 0) {
+    if (!isInt(price_cents) || price_cents <= 0) {
         return res.status(400).send("price_cents must be a positive integer");
     }
 
@@ -45,7 +48,7 @@ router.route("/").post(async (req, res) => {
             `INSERT INTO products (name, price_cents, description, image_url) VALUES (?, ?, ?, ?)`,
             [name, price_cents, description, image_url]
         );
-        res.status(201).json({ id: result.insertId, name, price_cents, description, image_url });
+        res.status(201).json({ description, id: result.insertId, image_url, name, price_cents });
     } catch (error) {
         console.log(error);
         res.status(500).send("Error occured on the server");
@@ -55,7 +58,7 @@ router.route("/").post(async (req, res) => {
 // Add a variant (size, sku, stock, Stripe price id) to an existing product
 router.route("/:id").post(async (req, res) => {
     const productId = Number(req.params.id);
-    const { size, sku, inventory_count = 0, price_id } = req.body ?? {};
+    const { inventory_count = 0, price_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 
     if (!Number.isInteger(productId) || productId < 1) {
         return res.status(400).send("Invalid product id");
@@ -63,7 +66,7 @@ router.route("/:id").post(async (req, res) => {
     if (!isNonEmptyString(size) || !isNonEmptyString(sku) || !isNonEmptyString(price_id)) {
         return res.status(400).send("size, sku and price_id are required non-empty strings");
     }
-    if (!Number.isInteger(inventory_count) || inventory_count < 0) {
+    if (!isInt(inventory_count) || inventory_count < 0) {
         return res.status(400).send("inventory_count must be a non-negative integer");
     }
 
@@ -74,11 +77,11 @@ router.route("/:id").post(async (req, res) => {
         );
         res.status(201).json({
             id: result.insertId,
+            inventory_count,
+            price_id,
             product_id: productId,
             size,
             sku,
-            inventory_count,
-            price_id,
         });
     } catch (error) {
         const code = (error as { code?: string }).code;
@@ -96,14 +99,14 @@ router.route("/:id").post(async (req, res) => {
 // Update any of the product-level fields; only fields present in the body are changed
 router.route("/:id").patch(async (req, res) => {
     const productId = Number(req.params.id);
-    const { name, price_cents, description, image_url } = req.body ?? {};
+    const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
     if (!Number.isInteger(productId) || productId < 1) {
         return res.status(400).send("Invalid product id");
     }
 
     const updates: string[] = [];
-    const values: (string | number)[] = [];
+    const values: (number | string)[] = [];
 
     if (name !== undefined) {
         if (!isNonEmptyString(name)) return res.status(400).send("name must be a non-empty string");
@@ -121,7 +124,7 @@ router.route("/:id").patch(async (req, res) => {
         values.push(image_url);
     }
     if (price_cents !== undefined) {
-        if (!Number.isInteger(price_cents) || price_cents <= 0) {
+        if (!isInt(price_cents) || price_cents <= 0) {
             return res.status(400).send("price_cents must be a positive integer");
         }
         updates.push("price_cents = ?");

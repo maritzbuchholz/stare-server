@@ -1,5 +1,7 @@
-import express from "express";
 import type { ResultSetHeader } from "mysql2";
+
+import express from "express";
+
 import connection from "../mysql.js";
 
 const router = express.Router();
@@ -48,12 +50,12 @@ const ORDER_STATUSES = [
 
 router.route("/:id").patch(async (req, res) => {
     const id = Number(req.params.id);
-    const { status } = req.body ?? {};
+    const { status } = (req.body ?? {}) as { status?: unknown };
 
     if (!Number.isInteger(id) || id < 1) {
         return res.status(400).send("Invalid order id");
     }
-    if (!ORDER_STATUSES.includes(status)) {
+    if (typeof status !== "string" || !ORDER_STATUSES.includes(status)) {
         return res.status(400).send(`status must be one of: ${ORDER_STATUSES.join(", ")}`);
     }
 
