@@ -12,7 +12,11 @@ CREATE TABLE `products` (
   `image_url` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `products_price_cents_positive` CHECK (`price_cents` > 0),
+  CONSTRAINT `products_name_not_empty` CHECK (CHAR_LENGTH(`name`) > 0),
+  CONSTRAINT `products_description_not_empty` CHECK (CHAR_LENGTH(`description`) > 0),
+  CONSTRAINT `products_image_url_not_empty` CHECK (CHAR_LENGTH(`image_url`) > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `product_variants` (
@@ -28,22 +32,25 @@ CREATE TABLE `product_variants` (
   UNIQUE KEY `product_variants_sku_unique` (`sku`),
   UNIQUE KEY `product_variants_product_size_unique` (`product_id`, `size`),
   KEY `product_variants_product_id_foreign` (`product_id`),
-  CONSTRAINT `product_variants_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+  CONSTRAINT `product_variants_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `product_variants_inventory_nonnegative` CHECK (`inventory_count` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `orders` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) NOT NULL,
-  `status` enum('pending','paid','fulfilled','cancelled','refunded') NOT NULL DEFAULT 'pending',
-  `subtotal_cents` int NOT NULL,
-  `shipping_cents` int NOT NULL DEFAULT 0,
-  `tax_cents` int NOT NULL DEFAULT 0,
+  -- 'payment_pending' = order row created, webhook hasn't confirmed payment yet
+  -- 'paid' = payment confirmed, awaiting fulfillment (renamed from 'pending' — see note below)
+  `status` enum('payment_pending','payment_cancelled','paid','fulfilled','refund_requested','refunded') NOT NULL DEFAULT 'payment_pending',
   `total_cents` int NOT NULL,
+  `email` varchar(255) NULL,
   `shipping_address` json NULL,
-  `stripe_payment_intent_id` varchar(255) NULL,
+  `stripe_session_id` varchar(255) NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `orders_stripe_session_id_unique` (`stripe_session_id`),
+  CONSTRAINT `orders_total_cents_positive` CHECK (`total_cents` > 0),
+  CONSTRAINT `orders_email_not_empty` CHECK (CHAR_LENGTH(`email`) > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `order_items` (
@@ -52,14 +59,17 @@ CREATE TABLE `order_items` (
   `product_variant_id` int unsigned NOT NULL,
   `product_name` varchar(255) NOT NULL,
   `variant_size` varchar(20) NOT NULL,
-  `product_sku` varchar(100) NOT NULL,
+  `product_sku` varchar(255) NOT NULL,
   `unit_price_cents` int NOT NULL,
   `quantity` int NOT NULL,
   `line_total_cents` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `order_items_variant_id_foreign` (`product_variant_id`),
   CONSTRAINT `order_items_order_id_foreign` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `order_items_variant_id_foreign` FOREIGN KEY (`product_variant_id`) REFERENCES `product_variants` (`id`)
+  CONSTRAINT `order_items_variant_id_foreign` FOREIGN KEY (`product_variant_id`) REFERENCES `product_variants` (`id`),
+  CONSTRAINT `order_items_quantity_positive` CHECK (`quantity` > 0),
+  CONSTRAINT `order_items_unit_price_nonnegative` CHECK (`unit_price_cents` >= 0),
+  CONSTRAINT `order_items_line_total_matches` CHECK (`line_total_cents` = `unit_price_cents` * `quantity`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `products` (`id`, `name`, `price_cents`, `description`, `image_url`) VALUES

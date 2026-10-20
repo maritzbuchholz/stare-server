@@ -1,0 +1,73 @@
+import express from "express";
+import Stripe from "stripe";
+
+import connection from "../mysql.js";
+
+const router = express.Router();
+
+const secret = process.env.SECRET;
+if (!secret) throw new Error('Missing SECRET');
+
+
+router.route("/").post(async (req, res) => {
+    let event: Stripe.Event;
+
+    // Get the signature sent by Stripe
+    const signature = req.headers['stripe-signature'];
+    if (!signature) {
+        return res.status(400).send('Missing stripe-signature header');
+    }
+
+    try {
+        event = Stripe.webhooks.constructEvent(req.body as Buffer, signature, secret);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.log(`Webhook signature verification failed.`, message);
+        return res.sendStatus(400);
+    }
+    
+    switch (event.type) {
+        case 'checkout.session.completed': {
+            const session = event.data.object;
+            const email = session.customer_details?.email ?? null;
+            const shippingAddress = JSON.stringify(
+                session.collected_information?.shipping_details?.address ?? null
+            );
+
+            try {
+                await connection.query(
+                    `UPDATE orders SET status = 'paid', email = ?, shipping_address = ? WHERE stripe_session_id = ?`,
+                    [email, shippingAddress, session.id]
+                );
+            } catch (err) {
+                console.log(`Failed to update order for session ${session.id}`, err);
+                res.sendStatus(500);
+                return;
+            }
+            break;
+        }
+        case 'checkout.session.expired': {
+            const session = event.data.object;
+
+            try {
+                await connection.query(
+                    `UPDATE orders SET status = 'payment_cancelled' WHERE stripe_session_id = ?`,
+                    [session.id]
+                );
+            } catch (err) {
+                console.log(`Failed to update order for session ${session.id}`, err);
+                res.sendStatus(500);
+                return;
+            }
+            break;
+        }
+        default:
+            console.log(`Unhandled event type ${event.type}`);
+    }
+
+    // Return a response to acknowledge receipt of the event
+    res.json({received: true});
+
+});
+
+export default router;
