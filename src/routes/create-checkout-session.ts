@@ -2,6 +2,7 @@ import express from "express";
 import Stripe from "stripe";
 
 import connection from "../mysql.js";
+import { isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.route("/").post(async (req, res) => {
 
     //Capture items where quantity is not an integer OR is negative; map the resulting skus to a new array
     const invalidQuantitySkus = items
-        .filter((item) => !Number.isInteger(item.quantity) || item.quantity < 1)
+        .filter((item) => !isPositiveInt(item.quantity))
         .map((item) => item.sku);
     //Return an error message to the client if there are items with erroneous quantities
     if (invalidQuantitySkus.length > 0) {

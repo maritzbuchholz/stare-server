@@ -2,6 +2,7 @@ import express from "express";
 import Stripe from "stripe";
 
 import connection from "../mysql.js";
+import { isNonEmptyString } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.route("/").post(async (req, res) => {
 
     // Get the signature sent by Stripe
     const signature = req.headers['stripe-signature'];
-    if (!signature) {
+    if (!isNonEmptyString(signature)) {
         return res.status(400).send('Missing stripe-signature header');
     }
 
