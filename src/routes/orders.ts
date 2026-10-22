@@ -3,6 +3,7 @@ import type { ResultSetHeader } from "mysql2";
 import express from "express";
 
 import connection from "../mysql.js";
+import { isOneOf, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -52,10 +53,10 @@ router.route("/:id").patch(async (req, res) => {
     const id = Number(req.params.id);
     const { status } = (req.body ?? {}) as { status?: unknown };
 
-    if (!Number.isInteger(id) || id < 1) {
+    if (!isPositiveInt(id)) {
         return res.status(400).send("Invalid order id");
     }
-    if (typeof status !== "string" || !ORDER_STATUSES.includes(status)) {
+    if (!isOneOf(status, ORDER_STATUSES)) {
         return res.status(400).send(`status must be one of: ${ORDER_STATUSES.join(", ")}`);
     }
 

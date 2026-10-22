@@ -3,25 +3,21 @@ import type { ResultSetHeader } from "mysql2";
 import express from "express";
 
 import connection from "../mysql.js";
+import { isNonEmptyString, isNonNegativeInt, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
-
-const isNonEmptyString = (value: unknown): value is string =>
-    typeof value === "string" && value.trim().length > 0;
-
-const isInt = (value: unknown): value is number => Number.isInteger(value);
 
 // Add a variant linked to an existing product via product_id (sku, size and price_id are required)
 router.route("/").post(async (req, res) => {
     const { inventory_count = 0, price_id, product_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 
-    if (!isInt(product_id) || product_id < 1) {
+    if (!isPositiveInt(product_id)) {
         return res.status(400).send("product_id must be a positive integer");
     }
     if (!isNonEmptyString(sku) || !isNonEmptyString(size) || !isNonEmptyString(price_id)) {
         return res.status(400).send("sku, size and price_id are required non-empty strings");
     }
-    if (!isInt(inventory_count) || inventory_count < 0) {
+    if (!isNonNegativeInt(inventory_count)) {
         return res.status(400).send("inventory_count must be a non-negative integer");
     }
 
@@ -71,7 +67,7 @@ router.route("/:sku").patch(async (req, res) => {
         values.push(sku);
     }
     if (inventory_count !== undefined) {
-        if (!isInt(inventory_count) || inventory_count < 0) {
+        if (!isNonNegativeInt(inventory_count)) {
             return res.status(400).send("inventory_count must be a non-negative integer");
         }
         updates.push("inventory_count = ?");
