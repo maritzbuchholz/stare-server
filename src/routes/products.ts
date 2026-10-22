@@ -4,6 +4,7 @@ import express from "express";
 // import { v4 as uuidv4 } from 'uuid';
 
 import connection from "../mysql.js";
+import { isNonEmptyString, isNonNegativeInt, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -27,11 +28,6 @@ router.route("/").get(async (req, res) => {
     }
 })
 
-const isNonEmptyString = (value: unknown): value is string =>
-    typeof value === "string" && value.trim().length > 0;
-
-const isInt = (value: unknown): value is number => Number.isInteger(value);
-
 // Add the product-level info; variants (size/sku/stock) are added via POST /products/:id
 router.route("/").post(async (req, res) => {
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
@@ -39,7 +35,7 @@ router.route("/").post(async (req, res) => {
     if (!isNonEmptyString(name) || !isNonEmptyString(description) || !isNonEmptyString(image_url)) {
         return res.status(400).send("name, description and image_url are required non-empty strings");
     }
-    if (!isInt(price_cents) || price_cents <= 0) {
+    if (!isPositiveInt(price_cents)) {
         return res.status(400).send("price_cents must be a positive integer");
     }
 
@@ -60,13 +56,13 @@ router.route("/:id").post(async (req, res) => {
     const productId = Number(req.params.id);
     const { inventory_count = 0, price_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 
-    if (!Number.isInteger(productId) || productId < 1) {
+    if (!isPositiveInt(productId)) {
         return res.status(400).send("Invalid product id");
     }
     if (!isNonEmptyString(size) || !isNonEmptyString(sku) || !isNonEmptyString(price_id)) {
         return res.status(400).send("size, sku and price_id are required non-empty strings");
     }
-    if (!isInt(inventory_count) || inventory_count < 0) {
+    if (!isNonNegativeInt(inventory_count)) {
         return res.status(400).send("inventory_count must be a non-negative integer");
     }
 
@@ -101,7 +97,7 @@ router.route("/:id").patch(async (req, res) => {
     const productId = Number(req.params.id);
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
-    if (!Number.isInteger(productId) || productId < 1) {
+    if (!isPositiveInt(productId)) {
         return res.status(400).send("Invalid product id");
     }
 
@@ -124,7 +120,7 @@ router.route("/:id").patch(async (req, res) => {
         values.push(image_url);
     }
     if (price_cents !== undefined) {
-        if (!isInt(price_cents) || price_cents <= 0) {
+        if (!isPositiveInt(price_cents)) {
             return res.status(400).send("price_cents must be a positive integer");
         }
         updates.push("price_cents = ?");
@@ -158,7 +154,7 @@ router.route("/:id").patch(async (req, res) => {
 router.route("/:id").delete(async (req, res) => {
     const productId = Number(req.params.id);
 
-    if (!Number.isInteger(productId) || productId < 1) {
+    if (!isPositiveInt(productId)) {
         return res.status(400).send("Invalid product id");
     }
 
