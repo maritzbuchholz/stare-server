@@ -32,11 +32,14 @@ router.route("/").get(async (req, res) => {
 router.route("/").post(async (req, res) => {
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
-    if (!isNonEmptyString(name) || !isNonEmptyString(description) || !isNonEmptyString(image_url)) {
-        return res.status(400).send("name, description and image_url are required non-empty strings");
-    }
-    if (!isPositiveInt(price_cents)) {
-        return res.status(400).send("price_cents must be a positive integer");
+    const errors: string[] = [];
+    if (!isNonEmptyString(name)) errors.push("name is required and must be a non-empty string");
+    if (!isNonEmptyString(description)) errors.push("description is required and must be a non-empty string");
+    if (!isNonEmptyString(image_url)) errors.push("image_url is required and must be a non-empty string");
+    if (!isPositiveInt(price_cents)) errors.push("price_cents is required and must be a positive integer");
+
+    if (errors.length > 0) {
+        return res.status(400).send(errors.join("; "));
     }
 
     try {
@@ -59,11 +62,15 @@ router.route("/:id").post(async (req, res) => {
     if (!isPositiveInt(productId)) {
         return res.status(400).send("Invalid product id");
     }
-    if (!isNonEmptyString(size) || !isNonEmptyString(sku) || !isNonEmptyString(price_id)) {
-        return res.status(400).send("size, sku and price_id are required non-empty strings");
-    }
-    if (!isNonNegativeInt(inventory_count)) {
-        return res.status(400).send("inventory_count must be a non-negative integer");
+
+    const errors: string[] = [];
+    if (!isNonEmptyString(size)) errors.push("size is required and must be a non-empty string");
+    if (!isNonEmptyString(sku)) errors.push("sku is required and must be a non-empty string");
+    if (!isNonEmptyString(price_id)) errors.push("price_id is required and must be a non-empty string");
+    if (!isNonNegativeInt(inventory_count)) errors.push("inventory_count must be a non-negative integer");
+
+    if (errors.length > 0) {
+        return res.status(400).send(errors.join("; "));
     }
 
     try {
