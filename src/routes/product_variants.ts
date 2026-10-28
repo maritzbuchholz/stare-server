@@ -11,14 +11,15 @@ const router = express.Router();
 router.route("/").post(async (req, res) => {
     const { inventory_count = 0, price_id, product_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 
-    if (!isPositiveInt(product_id)) {
-        return res.status(400).send("product_id must be a positive integer");
-    }
-    if (!isNonEmptyString(sku) || !isNonEmptyString(size) || !isNonEmptyString(price_id)) {
-        return res.status(400).send("sku, size and price_id are required non-empty strings");
-    }
-    if (!isNonNegativeInt(inventory_count)) {
-        return res.status(400).send("inventory_count must be a non-negative integer");
+    const errors: string[] = [];
+    if (!isPositiveInt(product_id)) errors.push("product_id is required and must be a positive integer");
+    if (!isNonEmptyString(sku)) errors.push("sku is required and must be a non-empty string");
+    if (!isNonEmptyString(size)) errors.push("size is required and must be a non-empty string");
+    if (!isNonEmptyString(price_id)) errors.push("price_id is required and must be a non-empty string");
+    if (!isNonNegativeInt(inventory_count)) errors.push("inventory_count must be a non-negative integer");
+
+    if (errors.length > 0) {
+        return res.status(400).send(errors.join("; "));
     }
 
     try {
