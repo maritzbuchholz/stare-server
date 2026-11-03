@@ -3,12 +3,13 @@ import type { ResultSetHeader } from "mysql2";
 import express from "express";
 
 import connection from "../mysql.js";
+import { requireApiKey } from "../utils/requireApiKey.js";
 import { isNonEmptyString, isNonNegativeInt, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
 // Add a variant linked to an existing product via product_id (sku, size and price_id are required)
-router.route("/").post(async (req, res) => {
+router.route("/").post(requireApiKey, async (req, res) => {
     const { inventory_count = 0, price_id, product_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 
     const errors: string[] = [];
@@ -50,7 +51,7 @@ router.route("/").post(async (req, res) => {
 
 // Update a variant looked up by its current sku; only fields present in the body are changed
 // (sending a new `sku` in the body renames it)
-router.route("/:sku").patch(async (req, res) => {
+router.route("/:sku").patch(requireApiKey, async (req, res) => {
     const currentSku = req.params.sku;
     const { inventory_count, price_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 

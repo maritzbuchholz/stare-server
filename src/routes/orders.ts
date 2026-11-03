@@ -3,11 +3,12 @@ import type { ResultSetHeader } from "mysql2";
 import express from "express";
 
 import connection from "../mysql.js";
+import { requireApiKey } from "../utils/requireApiKey.js";
 import { isOneOf, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
-router.route("/").get(async (req, res) => {
+router.route("/").get(requireApiKey, async (req, res) => {
     const sql = `
         SELECT
             o.*,
@@ -49,7 +50,7 @@ const ORDER_STATUSES = [
     "refunded",
 ];
 
-router.route("/:id").patch(async (req, res) => {
+router.route("/:id").patch(requireApiKey, async (req, res) => {
     const id = Number(req.params.id);
     const { status } = (req.body ?? {}) as { status?: unknown };
 

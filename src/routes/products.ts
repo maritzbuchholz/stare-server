@@ -4,7 +4,8 @@ import express from "express";
 // import { v4 as uuidv4 } from 'uuid';
 
 import connection from "../mysql.js";
-import { isNonEmptyString, isNonNegativeInt, isPositiveInt } from "../utils/validation.js";
+import { requireApiKey } from "../utils/requireApiKey.js";
+import { isNonEmptyString, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -28,8 +29,8 @@ router.route("/").get(async (req, res) => {
     }
 })
 
-// Add the product-level info; variants (size/sku/stock) are added via POST /products/:id
-router.route("/").post(async (req, res) => {
+// Add the product-level info; variants (size/sku/stock) are added via POST /product_variants
+router.route("/").post(requireApiKey, async (req, res) => {
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
     const errors: string[] = [];
@@ -54,53 +55,8 @@ router.route("/").post(async (req, res) => {
     }
 });
 
-// Add a variant (size, sku, stock, Stripe price id) to an existing product
-router.route("/:id").post(async (req, res) => {
-    const productId = Number(req.params.id);
-    const { inventory_count = 0, price_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
-
-    if (!isPositiveInt(productId)) {
-        return res.status(400).send("Invalid product id");
-    }
-
-    const errors: string[] = [];
-    if (!isNonEmptyString(size)) errors.push("size is required and must be a non-empty string");
-    if (!isNonEmptyString(sku)) errors.push("sku is required and must be a non-empty string");
-    if (!isNonEmptyString(price_id)) errors.push("price_id is required and must be a non-empty string");
-    if (!isNonNegativeInt(inventory_count)) errors.push("inventory_count must be a non-negative integer");
-
-    if (errors.length > 0) {
-        return res.status(400).send(errors.join("; "));
-    }
-
-    try {
-        const [result] = await connection.query<ResultSetHeader>(
-            `INSERT INTO product_variants (product_id, size, sku, inventory_count, price_id) VALUES (?, ?, ?, ?, ?)`,
-            [productId, size, sku, inventory_count, price_id]
-        );
-        res.status(201).json({
-            id: result.insertId,
-            inventory_count,
-            price_id,
-            product_id: productId,
-            size,
-            sku,
-        });
-    } catch (error) {
-        const code = (error as { code?: string }).code;
-        if (code === "ER_NO_REFERENCED_ROW_2") {
-            return res.status(404).send("Product not found");
-        }
-        if (code === "ER_DUP_ENTRY") {
-            return res.status(409).send("sku already exists, or this product already has that size");
-        }
-        console.log(error);
-        res.status(500).send("Error occured on the server");
-    }
-});
-
 // Update any of the product-level fields; only fields present in the body are changed
-router.route("/:id").patch(async (req, res) => {
+router.route("/:id").patch(requireApiKey, async (req, res) => {
     const productId = Number(req.params.id);
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
@@ -158,7 +114,7 @@ router.route("/:id").patch(async (req, res) => {
 });
 
 // Delete a product; its variants are removed too via ON DELETE CASCADE
-router.route("/:id").delete(async (req, res) => {
+router.route("/:id").delete(requireApiKey, async (req, res) => {
     const productId = Number(req.params.id);
 
     if (!isPositiveInt(productId)) {
