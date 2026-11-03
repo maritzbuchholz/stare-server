@@ -4,6 +4,7 @@ import express from "express";
 // import { v4 as uuidv4 } from 'uuid';
 
 import connection from "../mysql.js";
+import { requireApiKey } from "../utils/requireApiKey.js";
 import { isNonEmptyString, isNonNegativeInt, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
@@ -29,7 +30,7 @@ router.route("/").get(async (req, res) => {
 })
 
 // Add the product-level info; variants (size/sku/stock) are added via POST /products/:id
-router.route("/").post(async (req, res) => {
+router.route("/").post(requireApiKey, async (req, res) => {
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
     const errors: string[] = [];
@@ -55,7 +56,7 @@ router.route("/").post(async (req, res) => {
 });
 
 // Add a variant (size, sku, stock, Stripe price id) to an existing product
-router.route("/:id").post(async (req, res) => {
+router.route("/:id").post(requireApiKey, async (req, res) => {
     const productId = Number(req.params.id);
     const { inventory_count = 0, price_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 
@@ -100,7 +101,7 @@ router.route("/:id").post(async (req, res) => {
 });
 
 // Update any of the product-level fields; only fields present in the body are changed
-router.route("/:id").patch(async (req, res) => {
+router.route("/:id").patch(requireApiKey, async (req, res) => {
     const productId = Number(req.params.id);
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
@@ -158,7 +159,7 @@ router.route("/:id").patch(async (req, res) => {
 });
 
 // Delete a product; its variants are removed too via ON DELETE CASCADE
-router.route("/:id").delete(async (req, res) => {
+router.route("/:id").delete(requireApiKey, async (req, res) => {
     const productId = Number(req.params.id);
 
     if (!isPositiveInt(productId)) {
