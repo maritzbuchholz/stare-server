@@ -8,7 +8,7 @@ import { isOneOf, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
-router.route("/").get(async (req, res) => {
+router.route("/").get(requireApiKey, async (req, res) => {
     const sql = `
         SELECT
             o.*,
