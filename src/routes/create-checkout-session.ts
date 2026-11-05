@@ -8,7 +8,7 @@ const router = express.Router();
 
 const confirm = process.env.CONFIRM
 if (!confirm) throw new Error('Missing CONFIRM');
-const successPage = `http://localhost:${confirm}`;
+const successPage = confirm;
 
 const stripeKey = process.env.STRIPE_KEY;
 if (!stripeKey) throw new Error('Missing STRIPE_KEY');
