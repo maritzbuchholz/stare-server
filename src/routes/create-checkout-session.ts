@@ -2,7 +2,7 @@ import express from "express";
 import Stripe from "stripe";
 
 import connection from "../mysql.js";
-import { isPositiveInt } from "../utils/validation.js";
+import { isNonEmptyString, isPositiveInt } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -14,23 +14,42 @@ const stripeKey = process.env.STRIPE_KEY;
 if (!stripeKey) throw new Error('Missing STRIPE_KEY');
 const stripe = new Stripe(stripeKey);
 
-router.route("/").post(async (req, res) => {
-    const { items } = req.body as {
-        items: { quantity: number; sku: string; }[];
-    };
+//One item of the cart once it has passed both checks below
+interface CartItem {
+    quantity: number;
+    sku: string;
+}
 
-    //if items array is empty, return error message to client
-    if (items.length === 0) {
+//Check 1: the item is an object with a sku to look up
+const hasSku = (item: unknown): item is { quantity?: unknown; sku: string } =>
+    typeof item === "object" && item !== null && "sku" in item && isNonEmptyString(item.sku);
+
+//Check 2: its quantity is a whole number of 1 or more
+const hasValidQuantity = (item: { quantity?: unknown; sku: string }): item is CartItem =>
+    isPositiveInt(item.quantity);
+
+router.route("/").post(async (req, res) => {
+    //req.body is undefined when the request has no JSON body, so fall back to an empty object
+    const { items } = (req.body ?? {}) as { items?: unknown };
+
+    //if items is missing, not an array, or empty, return error message to client
+    if (!Array.isArray(items) || items.length === 0) {
         res.status(400).json({ error: "No items provided" });
         return;
     }
 
-    //Capture items where quantity is not an integer OR is negative; map the resulting skus to a new array
-    const invalidQuantitySkus = items
-        .filter((item) => !isPositiveInt(item.quantity))
-        .map((item) => item.sku);
-    //Return an error message to the client if there are items with erroneous quantities
-    if (invalidQuantitySkus.length > 0) {
+    //Return an error message to the client if any item is not an object with a sku
+    if (!items.every(hasSku)) {
+        res.status(400).json({ error: "Each item must have a sku" });
+        return;
+    }
+
+    //If any quantity is not an integer OR is not positive, map the skus of those items to a new array
+    //and return them in an error message to the client
+    if (!items.every(hasValidQuantity)) {
+        const invalidQuantitySkus = items
+            .filter((item) => !hasValidQuantity(item))
+            .map((item) => item.sku);
         res.status(400).json({ error: `Invalid quantity for sku(s): ${invalidQuantitySkus.join(", ")}` });
         return;
     }

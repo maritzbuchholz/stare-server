@@ -4,7 +4,7 @@ import express from "express";
 
 import connection from "../mysql.js";
 import { requireApiKey } from "../utils/requireApiKey.js";
-import { isNonEmptyString, isNonNegativeInt, isPositiveInt } from "../utils/validation.js";
+import { isNonEmptyStringUpTo, isNonNegativeIntUpTo, isPositiveIntUpTo, MAX_INT, MAX_UNSIGNED_INT } from "../utils/validation.js";
 
 const router = express.Router();
 
@@ -13,11 +13,12 @@ router.route("/").post(requireApiKey, async (req, res) => {
     const { inventory_count = 0, price_id, product_id, size, sku } = (req.body ?? {}) as Record<string, unknown>;
 
     const errors: string[] = [];
-    if (!isPositiveInt(product_id)) errors.push("product_id is required and must be a positive integer");
-    if (!isNonEmptyString(sku)) errors.push("sku is required and must be a non-empty string");
-    if (!isNonEmptyString(size)) errors.push("size is required and must be a non-empty string");
-    if (!isNonEmptyString(price_id)) errors.push("price_id is required and must be a non-empty string");
-    if (!isNonNegativeInt(inventory_count)) errors.push("inventory_count must be a non-negative integer");
+    if (!isPositiveIntUpTo(product_id, MAX_UNSIGNED_INT)) errors.push("product_id is required and must be a positive integer of at most 4294967295");
+    // 255 and 20 are the sizes of these varchar columns in stare.sql
+    if (!isNonEmptyStringUpTo(sku, 255)) errors.push("sku is required and must be a non-empty string of at most 255 characters");
+    if (!isNonEmptyStringUpTo(size, 20)) errors.push("size is required and must be a non-empty string of at most 20 characters");
+    if (!isNonEmptyStringUpTo(price_id, 255)) errors.push("price_id is required and must be a non-empty string of at most 255 characters");
+    if (!isNonNegativeIntUpTo(inventory_count, MAX_INT)) errors.push("inventory_count must be a non-negative integer of at most 2147483647");
 
     if (errors.length > 0) {
         return res.status(400).send(errors.join("; "));
@@ -59,24 +60,24 @@ router.route("/:sku").patch(requireApiKey, async (req, res) => {
     const values: (number | string)[] = [];
 
     if (size !== undefined) {
-        if (!isNonEmptyString(size)) return res.status(400).send("size must be a non-empty string");
+        if (!isNonEmptyStringUpTo(size, 20)) return res.status(400).send("size must be a non-empty string of at most 20 characters");
         updates.push("size = ?");
         values.push(size);
     }
     if (sku !== undefined) {
-        if (!isNonEmptyString(sku)) return res.status(400).send("sku must be a non-empty string");
+        if (!isNonEmptyStringUpTo(sku, 255)) return res.status(400).send("sku must be a non-empty string of at most 255 characters");
         updates.push("sku = ?");
         values.push(sku);
     }
     if (inventory_count !== undefined) {
-        if (!isNonNegativeInt(inventory_count)) {
-            return res.status(400).send("inventory_count must be a non-negative integer");
+        if (!isNonNegativeIntUpTo(inventory_count, MAX_INT)) {
+            return res.status(400).send("inventory_count must be a non-negative integer of at most 2147483647");
         }
         updates.push("inventory_count = ?");
         values.push(inventory_count);
     }
     if (price_id !== undefined) {
-        if (!isNonEmptyString(price_id)) return res.status(400).send("price_id must be a non-empty string");
+        if (!isNonEmptyStringUpTo(price_id, 255)) return res.status(400).send("price_id must be a non-empty string of at most 255 characters");
         updates.push("price_id = ?");
         values.push(price_id);
     }
