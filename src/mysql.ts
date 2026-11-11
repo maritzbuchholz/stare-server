@@ -9,6 +9,11 @@ const pool = mysql.createPool({
     queueLimit: 0,
     user: process.env.DB_USER,
     waitForConnections: true,
+
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
+    maxIdle: 10,
+    idleTimeout: 60000,
 });
 
 const promisePool = pool.promise();
