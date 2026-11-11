@@ -160,6 +160,7 @@ router.route("/").post(async (req, res) => {
             await db.commit();
         } catch (dbError) {
             await db.rollback();
+            await stripe.checkout.sessions.expire(session.id).catch(console.error);
             throw dbError;
         } finally {
             db.release();
