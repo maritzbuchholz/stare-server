@@ -24,6 +24,7 @@ Requests and responses are JSON. Two headers matter:
 - Without a valid key the server answers 401 "Missing or invalid API key".
 - Prices are in whole cents: 2500 means $25.00.
 - Integers must be JSON numbers (2500), not strings ("2500").
+- price_cents and inventory_count can be at most 2147483647.
 - Strings must not be empty or only spaces.
 - Errors are a plain-text message with a 4xx or 5xx status code, except where noted.
   An unexpected failure answers 500 "Error occured on the server".
@@ -161,7 +162,7 @@ Response 200:
     ]
 
 Variants in this list leave out product_id and price_id.
-A product with no variants still has one entry in "variants", with every value null.
+A product with no variants has an empty "variants" array.
 
 ### Update: PATCH /products/:id
 
@@ -330,6 +331,7 @@ the result to POST /webhook, which you never call yourself:
 Errors, sent as JSON in the form { "error": "message" }:
 
     400   No items provided
+    400   Each item must have a sku
     400   Invalid quantity for sku(s): ...
     400   Unknown sku(s): ...
     400   Insufficient inventory for sku(s): ...

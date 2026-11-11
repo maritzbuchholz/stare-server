@@ -5,20 +5,27 @@ import express from "express";
 
 import connection from "../mysql.js";
 import { requireApiKey } from "../utils/requireApiKey.js";
-import { isNonEmptyString, isPositiveInt } from "../utils/validation.js";
+import { isNonEmptyStringUpTo, isPositiveInt, isPositiveIntUpTo, MAX_INT } from "../utils/validation.js";
 
 const router = express.Router();
 
 router.route("/").get(async (req, res) => {
+    // The subquery is NULL for a product with no variants; COALESCE turns that into an empty array
     const sql = `
     SELECT 
     p.id, p.name, p.price_cents, p.description, p.image_url,
-    JSON_ARRAYAGG(
-        JSON_OBJECT('id', v.id, 'size', v.size, 'sku', v.sku, 'inventory_count', v.inventory_count)
+    COALESCE(
+        (
+            SELECT JSON_ARRAYAGG(
+                JSON_OBJECT('id', v.id, 'size', v.size, 'sku', v.sku, 'inventory_count', v.inventory_count)
+            )
+            FROM product_variants v
+            WHERE v.product_id = p.id
+        ),
+        JSON_ARRAY()
     ) AS variants
     FROM products p
-    LEFT JOIN product_variants v ON v.product_id = p.id
-    GROUP BY p.id
+    ORDER BY p.id
     `;
     try {
         const [results] = await connection.query(sql);
@@ -34,10 +41,11 @@ router.route("/").post(requireApiKey, async (req, res) => {
     const { description, image_url, name, price_cents } = (req.body ?? {}) as Record<string, unknown>;
 
     const errors: string[] = [];
-    if (!isNonEmptyString(name)) errors.push("name is required and must be a non-empty string");
-    if (!isNonEmptyString(description)) errors.push("description is required and must be a non-empty string");
-    if (!isNonEmptyString(image_url)) errors.push("image_url is required and must be a non-empty string");
-    if (!isPositiveInt(price_cents)) errors.push("price_cents is required and must be a positive integer");
+    // 255 is the size of these varchar columns in stare.sql
+    if (!isNonEmptyStringUpTo(name, 255)) errors.push("name is required and must be a non-empty string of at most 255 characters");
+    if (!isNonEmptyStringUpTo(description, 255)) errors.push("description is required and must be a non-empty string of at most 255 characters");
+    if (!isNonEmptyStringUpTo(image_url, 255)) errors.push("image_url is required and must be a non-empty string of at most 255 characters");
+    if (!isPositiveIntUpTo(price_cents, MAX_INT)) errors.push("price_cents is required and must be a positive integer of at most 2147483647");
 
     if (errors.length > 0) {
         return res.status(400).send(errors.join("; "));
@@ -68,23 +76,23 @@ router.route("/:id").patch(requireApiKey, async (req, res) => {
     const values: (number | string)[] = [];
 
     if (name !== undefined) {
-        if (!isNonEmptyString(name)) return res.status(400).send("name must be a non-empty string");
+        if (!isNonEmptyStringUpTo(name, 255)) return res.status(400).send("name must be a non-empty string of at most 255 characters");
         updates.push("name = ?");
         values.push(name);
     }
     if (description !== undefined) {
-        if (!isNonEmptyString(description)) return res.status(400).send("description must be a non-empty string");
+        if (!isNonEmptyStringUpTo(description, 255)) return res.status(400).send("description must be a non-empty string of at most 255 characters");
         updates.push("description = ?");
         values.push(description);
     }
     if (image_url !== undefined) {
-        if (!isNonEmptyString(image_url)) return res.status(400).send("image_url must be a non-empty string");
+        if (!isNonEmptyStringUpTo(image_url, 255)) return res.status(400).send("image_url must be a non-empty string of at most 255 characters");
         updates.push("image_url = ?");
         values.push(image_url);
     }
     if (price_cents !== undefined) {
-        if (!isPositiveInt(price_cents)) {
-            return res.status(400).send("price_cents must be a positive integer");
+        if (!isPositiveIntUpTo(price_cents, MAX_INT)) {
+            return res.status(400).send("price_cents must be a positive integer of at most 2147483647");
         }
         updates.push("price_cents = ?");
         values.push(price_cents);
