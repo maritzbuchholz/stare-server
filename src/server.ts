@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 
 import checkout from "./routes/create-checkout-session.js";
+import documentation from "./routes/documentation.js";
 import orders from "./routes/orders.js";
 import product_variants from "./routes/product_variants.js";
 import products from "./routes/products.js";
@@ -26,6 +27,7 @@ app.use("/products", products);
 app.use("/create-checkout-session", checkout);
 app.use("/orders", orders);
 app.use("/product_variants", product_variants);
+app.use("/documentation", documentation);
 // app.use("/order_items", order_items);
 
 app.listen(port, () => { console.log(`Listening on ${port}`); });

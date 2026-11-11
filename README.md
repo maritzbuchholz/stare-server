@@ -65,8 +65,11 @@ ADMIN_API_KEY=
 
 ## API Endpoints
 
+The API serves its own documentation at `GET /documentation` (e.g. `http://localhost:8080/documentation`): payloads, required fields, responses and errors for every endpoint below.
+
 | Method | Endpoint | Admin key required |
 | ------ | -------- | ------------------ |
+| GET | `/documentation` | No |
 | GET | `/products` | No |
 | POST | `/products` | Yes |
 | PATCH | `/products/:id` | Yes |
