@@ -1,5 +1,6 @@
-import express from "express";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+
+import express from "express";
 import Stripe from "stripe";
 
 import connection from "../mysql.js";
