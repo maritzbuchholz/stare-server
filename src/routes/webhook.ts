@@ -1,4 +1,5 @@
 import express from "express";
+import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import Stripe from "stripe";
 
 import connection from "../mysql.js";
@@ -35,15 +36,44 @@ router.route("/").post(async (req, res) => {
                 session.collected_information?.shipping_details?.address ?? null
             );
 
+            const db = await connection.getConnection();
             try {
-                await connection.query(
-                    `UPDATE orders SET status = 'paid', email = ?, shipping_address = ? WHERE stripe_session_id = ?`,
+                await db.beginTransaction();
+
+                // Only a pending order can become paid, so a duplicate delivery matches no rows
+                // and skips the decrement below (Stripe retries webhooks)
+                const [result] = await db.query<ResultSetHeader>(
+                    `UPDATE orders SET status = 'paid', email = ?, shipping_address = ? WHERE stripe_session_id = ? AND status = 'payment_pending'`,
                     [email, shippingAddress, session.id]
                 );
+
+                if (result.affectedRows > 0) {
+                    const [items] = await db.query<RowDataPacket[]>(
+                        `SELECT oi.product_variant_id, oi.quantity
+                         FROM order_items oi
+                         JOIN orders o ON o.id = oi.order_id
+                         WHERE o.stripe_session_id = ?`,
+                        [session.id]
+                    );
+
+                    // GREATEST keeps the count at 0 if stock ran out between checkout and payment,
+                    // so the paid status is still recorded instead of failing the CHECK constraint
+                    for (const item of items) {
+                        await db.query(
+                            `UPDATE product_variants SET inventory_count = GREATEST(inventory_count - ?, 0) WHERE id = ?`,
+                            [item.quantity, item.product_variant_id]
+                        );
+                    }
+                }
+
+                await db.commit();
             } catch (err) {
+                await db.rollback();
                 console.log(`Failed to update order for session ${session.id}`, err);
                 res.sendStatus(500);
                 return;
+            } finally {
+                db.release();
             }
             break;
         }
